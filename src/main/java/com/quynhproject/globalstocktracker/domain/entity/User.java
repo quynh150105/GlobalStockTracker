@@ -9,6 +9,7 @@ import lombok.NoArgsConstructor;
 
 import javax.validation.constraints.Email;
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Entity
 @Data
@@ -41,9 +42,11 @@ public class User {
     private String providerId;
 
     @Column(name = "createAt")
-    private LocalDateTime createAt;
+    private LocalDateTime createdAt;
 
     @Column(name = "updateAt")
-    private LocalDateTime updateAt;
+    private LocalDateTime updatedAt;
 
+    @OneToMany(mappedBy = "user",fetch = FetchType.LAZY, cascade = CascadeType.ALL)
+    private List<WatchLists> watchLists;
 }

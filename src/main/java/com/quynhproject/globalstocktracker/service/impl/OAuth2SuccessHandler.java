@@ -46,8 +46,8 @@ public class OAuth2SuccessHandler extends SimpleUrlAuthenticationSuccessHandler 
                             .authProvider(AuthProvider.GOOGLE)
                             .providerId(providerId)
                             .password(null)
-                            .createAt(LocalDateTime.now())
-                            .updateAt(LocalDateTime.now())
+                            .createdAt(LocalDateTime.now())
+                            .updatedAt(LocalDateTime.now())
                             .build();
 
                     return userRepository.save(newUser);

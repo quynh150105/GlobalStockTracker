@@ -39,8 +39,8 @@ public class UserServiceImpl implements com.quynhproject.globalstocktracker.serv
         user.setPassword(passwordEncoder.encode(request.getPassword()));
         user.setAuthProvider(AuthProvider.LOCAL);
         user.setProviderId(null);
-        user.setCreateAt(LocalDateTime.now());
-        user.setUpdateAt(LocalDateTime.now());
+        user.setCreatedAt(LocalDateTime.now());
+        user.setUpdatedAt(LocalDateTime.now());
 
         userRepository.save(user);
 
@@ -76,7 +76,7 @@ public class UserServiceImpl implements com.quynhproject.globalstocktracker.serv
 
         userMapper.updateUser(updateUser.get(), request);
         updateUser.get().setPassword(passwordEncoder.encode(request.getPassword()));
-        updateUser.get().setUpdateAt(LocalDateTime.now());
+        updateUser.get().setUpdatedAt(LocalDateTime.now());
 
         return userMapper.toCreateUserResponse(userRepository.save(updateUser.get()));
 
