@@ -1,11 +1,13 @@
 package com.quynhproject.globalstocktracker.domain.entity;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
 import com.quynhproject.globalstocktracker.constant.AuthProvider;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import org.springframework.cglib.core.Local;
 
 import javax.validation.constraints.Email;
 import java.time.LocalDateTime;
@@ -41,12 +43,25 @@ public class User {
     @Column(name = "provider_id")
     private String providerId;
 
-    @Column(name = "createAt")
+    @Column(name = "create_at")
+    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd HH:mm:ss")
     private LocalDateTime createdAt;
 
-    @Column(name = "updateAt")
+    @Column(name = "update_at")
+    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd HH:mm:ss")
     private LocalDateTime updatedAt;
 
     @OneToMany(mappedBy = "user",fetch = FetchType.LAZY, cascade = CascadeType.ALL)
     private List<WatchLists> watchLists;
+
+    @PrePersist
+    public void handleBeforeCreate(){
+        this.createdAt = LocalDateTime.now();
+        this.updatedAt = LocalDateTime.now();
+    }
+
+    @PreUpdate
+    public void handleBeforeUpdate(){
+        this.updatedAt = LocalDateTime.now();
+    }
 }

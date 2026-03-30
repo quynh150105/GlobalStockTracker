@@ -39,8 +39,7 @@ public class UserServiceImpl implements com.quynhproject.globalstocktracker.serv
         user.setPassword(passwordEncoder.encode(request.getPassword()));
         user.setAuthProvider(AuthProvider.LOCAL);
         user.setProviderId(null);
-        user.setCreatedAt(LocalDateTime.now());
-        user.setUpdatedAt(LocalDateTime.now());
+
 
         userRepository.save(user);
 
@@ -61,9 +60,11 @@ public class UserServiceImpl implements com.quynhproject.globalstocktracker.serv
             throw new AppException("id này chưa tồn tại người dùng!");
         }
 
-        userRepository.deleteById(id);
+        User user = deleteUser.get();
 
-        return userMapper.toCreateUserResponse(deleteUser.get());
+        userRepository.delete(user);
+
+        return userMapper.toCreateUserResponse(user);
     }
 
     @Override
@@ -76,7 +77,6 @@ public class UserServiceImpl implements com.quynhproject.globalstocktracker.serv
 
         userMapper.updateUser(updateUser.get(), request);
         updateUser.get().setPassword(passwordEncoder.encode(request.getPassword()));
-        updateUser.get().setUpdatedAt(LocalDateTime.now());
 
         return userMapper.toCreateUserResponse(userRepository.save(updateUser.get()));
 
