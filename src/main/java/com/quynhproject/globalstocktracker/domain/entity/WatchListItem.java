@@ -6,7 +6,8 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 @Entity
-@Table(name = "watchList_Items")
+@Table(name = "watchList_Items",
+uniqueConstraints = @UniqueConstraint(columnNames = {"watchlist_id", "stock_id"}))
 @AllArgsConstructor
 @NoArgsConstructor
 @Data
@@ -17,10 +18,10 @@ public class WatchListItem {
     private Long id;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "watchlist_id", nullable = false, unique = true)
+    @JoinColumn(name = "watchlist_id", nullable = false)
     private WatchLists watchlist;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "stock_id", nullable = false,unique = true)
+    @JoinColumn(name = "stock_id", nullable = false)
     private Stock stock;
 }

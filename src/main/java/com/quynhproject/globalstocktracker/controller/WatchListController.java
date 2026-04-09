@@ -2,6 +2,7 @@ package com.quynhproject.globalstocktracker.controller;
 
 import com.quynhproject.globalstocktracker.domain.dto.request.WatchListRequest;
 import com.quynhproject.globalstocktracker.domain.dto.response.ApiResponse;
+import com.quynhproject.globalstocktracker.domain.dto.response.WatchListItemStockResponse;
 import com.quynhproject.globalstocktracker.domain.dto.response.WatchListResponse;
 import com.quynhproject.globalstocktracker.service.WatchListService;
 import lombok.RequiredArgsConstructor;

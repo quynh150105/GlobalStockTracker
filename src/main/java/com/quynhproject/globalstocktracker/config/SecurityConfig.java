@@ -21,7 +21,7 @@ import org.springframework.security.config.annotation.web.configurers.AbstractHt
 @RequiredArgsConstructor
 public class SecurityConfig {
 
-    private final String[] publicEndpoint = {"/users/**", "/auth/**","/watch-list/**"};
+    private final String[] publicEndpoint = {"/users/**", "/auth/**","/watch-list/**","/stocks/**"};
 
     @Value("${jwt.signerKey}")
     private String signerKey;
