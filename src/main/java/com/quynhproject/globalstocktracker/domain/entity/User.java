@@ -3,13 +3,14 @@ package com.quynhproject.globalstocktracker.domain.entity;
 import com.fasterxml.jackson.annotation.JsonFormat;
 import com.quynhproject.globalstocktracker.constant.AuthProvider;
 import jakarta.persistence.*;
+import jakarta.validation.constraints.Email;
+import jakarta.validation.constraints.Size;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.springframework.cglib.core.Local;
 
-import javax.validation.constraints.Email;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -34,6 +35,7 @@ public class User {
     private String username;
 
     @Column(name = "password")
+    @Size(min =6, message = "Password phải có ít nhất 6 ký tự")
     private String password;
 
     @Enumerated(EnumType.STRING)
@@ -53,6 +55,9 @@ public class User {
 
     @OneToMany(mappedBy = "user",fetch = FetchType.LAZY, cascade = CascadeType.ALL)
     private List<WatchLists> watchLists;
+
+    @Column(name= "role")
+    private String role;
 
     @PrePersist
     public void handleBeforeCreate(){

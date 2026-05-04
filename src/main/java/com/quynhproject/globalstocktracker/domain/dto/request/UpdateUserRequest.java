@@ -4,12 +4,12 @@ import com.quynhproject.globalstocktracker.constant.AuthProvider;
 import jakarta.persistence.Column;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
+import jakarta.validation.constraints.Email;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-import javax.validation.constraints.Email;
 import java.time.LocalDateTime;
 
 @Data

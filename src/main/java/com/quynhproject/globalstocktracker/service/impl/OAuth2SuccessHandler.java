@@ -54,10 +54,10 @@ public class OAuth2SuccessHandler extends SimpleUrlAuthenticationSuccessHandler 
                 });
 
         // tạo JWT
-        String token = authService.generateToken(user.getEmail());
+        String token = authService.generateToken(user);
 
         // redirect về frontend
-        String redirectUrl = "http://127.0.0.1:5500/demofe/success.html?token=" + token;
+        String redirectUrl = "http://localhost:5173/oauth2/success?token=" + token;
 
         getRedirectStrategy().sendRedirect(request, response, redirectUrl);
     }

@@ -1,13 +1,12 @@
 package com.quynhproject.globalstocktracker.domain.dto.request;
 
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Pattern;
+import jakarta.validation.constraints.Size;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-
-import javax.validation.constraints.Email;
-import javax.validation.constraints.NotBlank;
-import javax.validation.constraints.Pattern;
 
 @Data
 @AllArgsConstructor
@@ -20,6 +19,7 @@ public class CreateUserRequest {
     private String email;
 
     @NotBlank(message="pasword không được để trống")
+    @Size(min=6, message="Password phải có ít nhất 6 ký tự")
     private String password;
 
     @NotBlank(message="username không đuợc để trống")

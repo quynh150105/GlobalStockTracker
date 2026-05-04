@@ -39,6 +39,7 @@ public class UserServiceImpl implements com.quynhproject.globalstocktracker.serv
         user.setPassword(passwordEncoder.encode(request.getPassword()));
         user.setAuthProvider(AuthProvider.LOCAL);
         user.setProviderId(null);
+        user.setRole("ROLE_USER");
 
 
         userRepository.save(user);
