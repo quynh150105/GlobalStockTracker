@@ -31,7 +31,7 @@ public class User {
     @Email(message = "Email không đúng định dạng")
     private String email;
 
-    @Column(name="username")
+    @Column(name="username", unique = true)
     private String username;
 
     @Column(name = "password")

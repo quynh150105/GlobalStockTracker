@@ -16,17 +16,27 @@ import java.util.Map;
 public class GlobalExceptionHandler {
 
     @ExceptionHandler(AppException.class)
-    public ResponseEntity<?> AppExceptionHandler(AppException ex, WebRequest request){
+    public ResponseEntity<?> appExceptionHandler(AppException ex, WebRequest request){
         Map<String, Object> body = new HashMap<>();
         body.put("timestamp", LocalDateTime.now());
         body.put("status", HttpStatus.BAD_REQUEST.value());
-        body.put("message",ex.getMessage());
+        body.put("message", ex.getMessage());
         body.put("path", request.getDescription(false).replace("url=", ""));
-        return new ResponseEntity<>(body,HttpStatus.BAD_REQUEST);
+        return new ResponseEntity<>(body, HttpStatus.BAD_REQUEST);
+    }
+
+    @ExceptionHandler(RuntimeException.class)
+    public ResponseEntity<?> runtimeExceptionHandler(RuntimeException ex, WebRequest request){
+        Map<String, Object> body = new HashMap<>();
+        body.put("timestamp", LocalDateTime.now());
+        body.put("status", HttpStatus.UNAUTHORIZED.value());
+        body.put("message", ex.getMessage());
+        body.put("path", request.getDescription(false).replace("url=", ""));
+        return new ResponseEntity<>(body, HttpStatus.UNAUTHORIZED);
     }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
-    public ResponseEntity<ApiResponse<?>> handleValidationException( MethodArgumentNotValidException ex){
+    public ResponseEntity<ApiResponse<?>> handleValidationException(MethodArgumentNotValidException ex){
         Map<String, String> errors = new HashMap<>();
 
         ex.getBindingResult().getFieldErrors().forEach(
@@ -35,8 +45,8 @@ public class GlobalExceptionHandler {
 
         ApiResponse<Map<String, String>> response = ApiResponse.<Map<String, String>>builder()
                 .data(errors)
-                .HttpStatus(400)
-                .message("Dữ liệu không hợp lệ")
+                .status(HttpStatus.BAD_REQUEST.value())
+                .message("Validation failed")
                 .build();
 
         return ResponseEntity.badRequest().body(response);

@@ -19,6 +19,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
+import org.springframework.web.util.UriComponentsBuilder;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -42,6 +43,7 @@ public class StockServiceImpl implements StockService {
 
     @Override
     public StockResponse getStockInfo(String symbol) {
+        symbol = normalizeSymbol(symbol);
         Stock stock = stockRepository.findBySymbolWithPrices(symbol)
                 .orElseThrow(() -> new AppException("Stock not found"));
         return stockMapper.toStockResponse(stock);
@@ -49,20 +51,13 @@ public class StockServiceImpl implements StockService {
 
     @Override
     public StockResponse createStockFromApi(String symbol) {
-        symbol = symbol.toUpperCase();
+        symbol = normalizeSymbol(symbol);
 
         if (stockRepository.findBySymbolWithPrices(symbol).isPresent()) {
             throw new AppException("Stock already exists");
         }
 
-        String url = "https://www.alphavantage.co/query?function=TIME_SERIES_DAILY"
-                + "&symbol=" + symbol
-                + "&apikey=" + API_KEY;
-
-        AlphaVantageChartResponse response = restTemplate.getForObject(url, AlphaVantageChartResponse.class);
-        if (response == null || response.getTimeSeries() == null) {
-            throw new AppException("Stock not found in API");
-        }
+        AlphaVantageChartResponse response = fetchDailyTimeSeries(symbol);
 
         String latestDate = response.getTimeSeries().keySet()
                 .stream()
@@ -103,38 +98,34 @@ public class StockServiceImpl implements StockService {
 
     @Override
     public StockChartResponse getStockChart(String symbol) {
+        symbol = normalizeSymbol(symbol);
+
+        AlphaVantageChartResponse response;
         try {
-            symbol = symbol.toUpperCase();
-
-            String url = "https://www.alphavantage.co/query?function=TIME_SERIES_DAILY"
-                    + "&symbol=" + symbol
-                    + "&apikey=" + API_KEY;
-
-
-            AlphaVantageChartResponse response = restTemplate.getForObject(url, AlphaVantageChartResponse.class);
-
-            if (response == null || response.getTimeSeries() == null) {
-                throw new AppException("no chart data");
-            }
-            List<PricePoint> points = response.getTimeSeries().entrySet()
-                    .stream()
-                    .map(entry -> PricePoint.builder()
-                            .time(entry.getKey())
-                            .openPrice(Double.parseDouble(entry.getValue().getOpen()))
-                            .highPrice(Double.parseDouble(entry.getValue().getHigh()))
-                            .lowPrice(Double.parseDouble(entry.getValue().getLow()))
-                            .closePrice(Double.parseDouble(entry.getValue().getClose()))
-                            .build()
-                    ).sorted(Comparator.comparing(PricePoint::getTime).reversed())
-                    .limit(30)
-                    .toList();
-            return StockChartResponse.builder()
-                    .data(points)
-                    .symbol(symbol)
-                    .build();
-        } catch (Exception e) {
-            throw new AppException("Error fetching data");
+            response = fetchDailyTimeSeries(symbol);
+        } catch (AppException ex) {
+            return getStockChartFromDatabase(symbol, ex);
         }
+
+        List<PricePoint> points = response.getTimeSeries().entrySet()
+                .stream()
+                .sorted((e1, e2) -> e2.getKey().compareTo(e1.getKey()))
+                .limit(30)
+                .map(entry -> PricePoint.builder()
+                        .time(entry.getKey())
+                        .openPrice(Double.parseDouble(entry.getValue().getOpen()))
+                        .highPrice(Double.parseDouble(entry.getValue().getHigh()))
+                        .lowPrice(Double.parseDouble(entry.getValue().getLow()))
+                        .closePrice(Double.parseDouble(entry.getValue().getClose()))
+                        .build()
+                )
+                .sorted(Comparator.comparing(PricePoint::getTime))
+                .toList();
+
+        return StockChartResponse.builder()
+                .data(points)
+                .symbol(symbol)
+                .build();
     }
 
     @Override
@@ -148,5 +139,74 @@ public class StockServiceImpl implements StockService {
                 .map(WatchListItem::getStock)
                 .map(stockMapper::toStockResponse)
                 .toList();
+    }
+
+    private String normalizeSymbol(String symbol) {
+        if (symbol == null || symbol.trim().isEmpty()) {
+            throw new AppException("Symbol is required");
+        }
+        return symbol.trim().toUpperCase();
+    }
+
+    private AlphaVantageChartResponse fetchDailyTimeSeries(String symbol) {
+        String url = UriComponentsBuilder.fromUriString("https://www.alphavantage.co/query")
+                .queryParam("function", "TIME_SERIES_DAILY")
+                .queryParam("symbol", symbol)
+                .queryParam("apikey", API_KEY)
+                .toUriString();
+
+        AlphaVantageChartResponse response = restTemplate.getForObject(url, AlphaVantageChartResponse.class);
+
+        if (response == null) {
+            throw new AppException("No chart data");
+        }
+        if (response.getErrorMessage() != null) {
+            throw new AppException("Invalid stock symbol");
+        }
+        if (response.getNote() != null || response.getInformation() != null) {
+            throw new AppException("Alpha Vantage API limit reached");
+        }
+        if (response.getTimeSeries() == null || response.getTimeSeries().isEmpty()) {
+            throw new AppException("No chart data");
+        }
+
+        return response;
+    }
+
+    private StockChartResponse getStockChartFromDatabase(String symbol, AppException originalException) {
+        Optional<Stock> stockOptional = stockRepository.findBySymbolWithPrices(symbol);
+
+        if (stockOptional.isEmpty()
+                || stockOptional.get().getStockPrices() == null
+                || stockOptional.get().getStockPrices().isEmpty()) {
+            throw originalException;
+        }
+
+        List<PricePoint> points = stockOptional.get().getStockPrices()
+                .stream()
+                .filter(stockPrice -> stockPrice.getPrice() != null && stockPrice.getTimestamp() != null)
+                .sorted(Comparator.comparing(StockPrices::getTimestamp).reversed())
+                .limit(30)
+                .map(stockPrice -> {
+                    Double price = stockPrice.getPrice().doubleValue();
+                    return PricePoint.builder()
+                            .time(stockPrice.getTimestamp().toLocalDate().toString())
+                            .openPrice(price)
+                            .highPrice(price)
+                            .lowPrice(price)
+                            .closePrice(price)
+                            .build();
+                })
+                .sorted(Comparator.comparing(PricePoint::getTime))
+                .toList();
+
+        if (points.isEmpty()) {
+            throw originalException;
+        }
+
+        return StockChartResponse.builder()
+                .symbol(symbol)
+                .data(points)
+                .build();
     }
 }

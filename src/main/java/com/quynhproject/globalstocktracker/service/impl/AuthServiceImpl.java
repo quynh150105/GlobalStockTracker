@@ -25,7 +25,6 @@ import org.springframework.security.oauth2.jwt.JwsHeader;
 import org.springframework.stereotype.Service;
 
 import java.text.ParseException;
-import java.time.Duration;
 import java.util.Date;
 import java.util.UUID;
 
@@ -34,14 +33,14 @@ import java.util.UUID;
 @Slf4j
 public class AuthServiceImpl implements AuthService {
 
-   private final UserRepository userRepository;
+    private final UserRepository userRepository;
 
-   private final PasswordEncoder passwordEncoder;
+    private final PasswordEncoder passwordEncoder;
 
-   private final InvalidatedTokenRepository invalidatedTokenRepository;
+    private final InvalidatedTokenRepository invalidatedTokenRepository;
 
-   @Value("${jwt.signerKey}")
-   private String signerKey;
+    @Value("${jwt.signerKey}")
+    private String signerKey;
 
 
     @Override
@@ -81,6 +80,7 @@ public class AuthServiceImpl implements AuthService {
 
         return LoginUserResponse.builder()
                 .token(generateToken(user))
+                .refreshToken(generateRefreshToken(user.getUsername()))
                 .authenticated(true)
                 .build();
     }
@@ -107,7 +107,7 @@ public class AuthServiceImpl implements AuthService {
 
         var user = userRepository.findByUsername(username).orElseThrow(() -> new AppException("unauthenticated"));
 
-        String token = generateRefreshToken(username);
+        String token = generateToken(user);
 
         return RefreshTokenResponse.builder()
                 .token(token)
@@ -117,7 +117,7 @@ public class AuthServiceImpl implements AuthService {
 
     @Override
     public void logout(LogoutRequest request) throws ParseException, JOSEException {
-        var signToken = verifyToken(request.getToken(), true);
+        var signToken = verifyToken(request.getToken(), false);
 
         String jti = signToken.getJWTClaimsSet().getJWTID();
 
@@ -160,14 +160,19 @@ public class AuthServiceImpl implements AuthService {
 
         SignedJWT signedJWT = SignedJWT.parse(token);
 
-        Date expirationTime =(isRefresh)
-                ?Date.from(signedJWT.getJWTClaimsSet().getIssueTime().toInstant().plus(Duration.ofSeconds(3600)))
-                :signedJWT.getJWTClaimsSet().getExpirationTime();
+        Date expirationTime = signedJWT.getJWTClaimsSet().getExpirationTime();
 
         var verified = signedJWT.verify(verifier);
 
         if(!(verified && expirationTime.after(new Date())))
             throw new RuntimeException("Unauthenticated");
+        String tokenType = signedJWT.getJWTClaimsSet().getStringClaim("type");
+        if (isRefresh && !"refresh".equals(tokenType)) {
+            throw new RuntimeException("Refresh token required");
+        }
+        if (!isRefresh && !"access".equals(tokenType)) {
+            throw new RuntimeException("Access token required");
+        }
         if(invalidatedTokenRepository.existsById(signedJWT.getJWTClaimsSet().getJWTID())){
             throw new RuntimeException("unauthenticated");
         }

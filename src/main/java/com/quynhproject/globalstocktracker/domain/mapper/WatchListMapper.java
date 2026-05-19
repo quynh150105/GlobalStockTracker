@@ -4,8 +4,10 @@ import com.quynhproject.globalstocktracker.domain.dto.request.WatchListRequest;
 import com.quynhproject.globalstocktracker.domain.dto.response.WatchListResponse;
 import com.quynhproject.globalstocktracker.domain.entity.User;
 import com.quynhproject.globalstocktracker.domain.entity.WatchLists;
+import org.mapstruct.BeanMapping;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
+import org.mapstruct.ReportingPolicy;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -15,6 +17,7 @@ public interface WatchListMapper {
     @Mapping(source = "user.id", target = "userId")
     WatchListResponse toWatchListResponse(WatchLists watchLists);
 
+    @BeanMapping(unmappedTargetPolicy = ReportingPolicy.IGNORE)
     @Mapping(source="userId", target="user.id")
     WatchLists toWatchList(WatchListRequest dto);
 

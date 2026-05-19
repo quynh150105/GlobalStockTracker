@@ -5,6 +5,8 @@ import com.quynhproject.globalstocktracker.domain.dto.request.UpdateUserRequest;
 import com.quynhproject.globalstocktracker.domain.dto.response.ApiResponse;
 import com.quynhproject.globalstocktracker.domain.dto.response.UserResponse;
 import com.quynhproject.globalstocktracker.service.UserService;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -18,37 +20,38 @@ import java.util.List;
 @RequiredArgsConstructor
 @RequestMapping("/users")
 @Validated
+@Tag(name = "Users", description = "User registration and management APIs")
 public class UserController {
 
     private final UserService userService;
 
     @PostMapping("/register")
     public ResponseEntity<ApiResponse<?>> registerUser(@Valid @RequestBody CreateUserRequest createUserRequest){
-        return ResponseEntity.ok(
+        return ResponseEntity.status(HttpStatus.CREATED).body(
                 ApiResponse.<UserResponse>builder()
                         .data(userService.register(createUserRequest))
-                        .message("created")
-                        .HttpStatus(HttpStatus.CREATED.value())
+                        .message("User created")
+                        .status(HttpStatus.CREATED.value())
                         .build());
     }
 
     @GetMapping("/")
     public ResponseEntity<ApiResponse<?>> getAllUser(){
-        return ResponseEntity.ok(
+        return ResponseEntity.status(HttpStatus.OK).body(
                 ApiResponse.<List<UserResponse>>builder()
-                        .message("List User")
+                        .message("List users")
                         .data(userService.getAll())
-                        .HttpStatus(HttpStatus.ACCEPTED.value())
+                        .status(HttpStatus.OK.value())
                         .build()
         );
     }
 
     @DeleteMapping("/{id}")
     public ResponseEntity<ApiResponse<?>> deleteById(@PathVariable("id") Long id){
-        return ResponseEntity.ok(
+        return ResponseEntity.status(HttpStatus.OK).body(
                 ApiResponse.<UserResponse>builder()
-                        .message("Delete User")
-                        .HttpStatus(HttpStatus.ACCEPTED.value())
+                        .message("User deleted")
+                        .status(HttpStatus.OK.value())
                         .data(userService.delete(id))
                         .build()
 
@@ -56,11 +59,11 @@ public class UserController {
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<ApiResponse<?>> updateLocalUser(@PathVariable("id") Long id, @RequestBody UpdateUserRequest request){
-        return ResponseEntity.ok(
+    public ResponseEntity<ApiResponse<?>> updateLocalUser(@PathVariable("id") Long id, @Valid @RequestBody UpdateUserRequest request){
+        return ResponseEntity.status(HttpStatus.OK).body(
                 ApiResponse.<UserResponse>builder()
-                        .message("Update user")
-                        .HttpStatus(HttpStatus.ACCEPTED.value())
+                        .message("User updated")
+                        .status(HttpStatus.OK.value())
                         .data(userService.update(id, request))
                         .build()
         );

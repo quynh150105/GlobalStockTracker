@@ -8,17 +8,17 @@ import com.quynhproject.globalstocktracker.domain.entity.User;
 import com.quynhproject.globalstocktracker.domain.mapper.UserMapper;
 import com.quynhproject.globalstocktracker.excetion.AppException;
 import com.quynhproject.globalstocktracker.repository.UserRepository;
+import com.quynhproject.globalstocktracker.service.UserService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
-import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
-public class UserServiceImpl implements com.quynhproject.globalstocktracker.service.UserService {
+public class UserServiceImpl implements UserService {
 
     private final UserRepository userRepository;
 
@@ -28,11 +28,10 @@ public class UserServiceImpl implements com.quynhproject.globalstocktracker.serv
 
     @Override
     public UserResponse register(CreateUserRequest request) {
-
         Optional<User> userOptional = userRepository.findByEmail(request.getEmail());
 
         if(userOptional.isPresent()){
-            throw new AppException("Email đã tồn tại");
+            throw new AppException("Email already exists");
         }
 
         User user = userMapper.toUser(request);
@@ -41,9 +40,7 @@ public class UserServiceImpl implements com.quynhproject.globalstocktracker.serv
         user.setProviderId(null);
         user.setRole("ROLE_USER");
 
-
         userRepository.save(user);
-
 
         return userMapper.toCreateUserResponse(user);
     }
@@ -55,13 +52,8 @@ public class UserServiceImpl implements com.quynhproject.globalstocktracker.serv
 
     @Override
     public UserResponse delete(Long id) {
-        Optional<User> deleteUser = userRepository.findById(id);
-
-        if(deleteUser.isEmpty()){
-            throw new AppException("id này chưa tồn tại người dùng!");
-        }
-
-        User user = deleteUser.get();
+        User user = userRepository.findById(id)
+                .orElseThrow(() -> new AppException("User not found"));
 
         userRepository.delete(user);
 
@@ -70,16 +62,19 @@ public class UserServiceImpl implements com.quynhproject.globalstocktracker.serv
 
     @Override
     public UserResponse update(Long id, UpdateUserRequest request) {
-        Optional<User> updateUser = userRepository.findById(id);
+        User user = userRepository.findById(id)
+                .orElseThrow(() -> new AppException("User not found"));
 
-        if(updateUser.isEmpty()){
-            throw new AppException("User not found");
+        if (request.getEmail() != null && !request.getEmail().isBlank()) {
+            user.setEmail(request.getEmail());
+        }
+        if (request.getUsername() != null && !request.getUsername().isBlank()) {
+            user.setUsername(request.getUsername());
+        }
+        if (request.getPassword() != null && !request.getPassword().isBlank()) {
+            user.setPassword(passwordEncoder.encode(request.getPassword()));
         }
 
-        userMapper.updateUser(updateUser.get(), request);
-        updateUser.get().setPassword(passwordEncoder.encode(request.getPassword()));
-
-        return userMapper.toCreateUserResponse(userRepository.save(updateUser.get()));
-
+        return userMapper.toCreateUserResponse(userRepository.save(user));
     }
 }

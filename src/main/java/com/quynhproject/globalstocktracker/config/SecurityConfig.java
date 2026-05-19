@@ -17,16 +17,29 @@ import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 import org.springframework.web.filter.CorsFilter;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 
+import java.util.Arrays;
+
 
 @Configuration
 @EnableWebSecurity
 @RequiredArgsConstructor
 public class SecurityConfig {
 
-    private final String[] publicEndpoint = {"/auth/**", "/stocks/**", "/users/register"};
+    private final String[] publicEndpoint = {
+            "/auth/login",
+            "/stocks/chart",
+            "/stocks/info",
+            "/users/register",
+            "/v3/api-docs/**",
+            "/swagger-ui/**",
+            "/swagger-ui.html"
+    };
 
     @Value("${jwt.signerKey}")
     private String signerKey;
+
+    @Value("${app.cors.allowed-origins:http://localhost:5173}")
+    private String allowedOrigins;
 
     private final CustomOAuth2Service oAuth2Service;
 
@@ -69,7 +82,10 @@ public class SecurityConfig {
     public org.springframework.web.filter.CorsFilter corsFilter() {
         CorsConfiguration corsConfiguration = new CorsConfiguration();
 
-        corsConfiguration.addAllowedOrigin("http://localhost:5173");
+        corsConfiguration.setAllowedOrigins(Arrays.stream(allowedOrigins.split(","))
+                .map(String::trim)
+                .filter(origin -> !origin.isEmpty())
+                .toList());
         corsConfiguration.addAllowedMethod("*");
         corsConfiguration.addAllowedHeader("*");
         corsConfiguration.setAllowCredentials(true);

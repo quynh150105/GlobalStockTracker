@@ -16,6 +16,15 @@ public class AlphaVantageChartResponse {
     @JsonProperty("Time Series (Daily)")
     private Map<String, TimeSeries> timeSeries;
 
+    @JsonProperty("Error Message")
+    private String errorMessage;
+
+    @JsonProperty("Note")
+    private String note;
+
+    @JsonProperty("Information")
+    private String information;
+
     @Data
     public static class TimeSeries{
         @JsonProperty("1. open")

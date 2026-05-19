@@ -47,11 +47,14 @@ public class WatchListServiceImpl implements WatchListService {
         Optional<WatchLists> watchListsOptional = watchListRepository.findByName(request.getName());
 
         if(watchListsOptional.isPresent()){
-            throw new AppException("watch List da ton tai");
+            throw new AppException("Watchlist already exists");
         }
 
-        WatchLists watchLists = watchListMapper.toWatchList(request);
+        User user = userRepository.findById(request.getUserId())
+                .orElseThrow(() -> new AppException("User not found"));
 
+        WatchLists watchLists = watchListMapper.toWatchList(request);
+        watchLists.setUser(user);
 
 
         return watchListMapper.toWatchListResponse(watchListRepository.save(watchLists));
@@ -63,7 +66,8 @@ public class WatchListServiceImpl implements WatchListService {
                 .orElseThrow(()-> new AppException("Watch list not found"));
 
         existing.setName(request.getName());
-        existing.setUser(userRepository.findById(request.getUserId()).get());
+        existing.setUser(userRepository.findById(request.getUserId())
+                .orElseThrow(() -> new AppException("User not found")));
         watchListRepository.save(existing);
 
         return watchListMapper.toWatchListResponse(existing);
